@@ -1,0 +1,90 @@
+
+#!/bin/bash
+
+while true
+do
+    echo ""
+    echo "1. Create Address Book"
+    echo "2. View Address Book"
+    echo "3. Insert Record"
+    echo "4. Delete Record"
+    echo "5. Modify Record"
+    echo "6. Exit"
+
+    echo "Enter your choice:"
+    read ch
+
+    case $ch in
+
+    1)
+        mkdir -p AddressBook
+        touch AddressBook/data.txt
+        echo "Address Book Created"
+        ;;
+
+    2)
+        cat AddressBook/data.txt
+        ;;
+
+    3)
+        echo "Enter Name:"
+        read name
+        echo "Enter Phone:"
+        read phone
+        echo "Enter Address:"
+        read addr
+
+        echo "$name|$phone|$addr" >> AddressBook/data.txt
+        echo "Record Inserted"
+        ;;
+
+    4)
+        echo "Enter Name to Delete:"
+        read name
+
+        grep -v "^$name|" AddressBook/data.txt > temp.txt
+        mv temp.txt AddressBook/data.txt
+
+        echo "Record Deleted"
+        ;;
+
+    5)
+        echo "Enter Name to Modify:"
+        read name
+
+        grep -v "^$name|" AddressBook/data.txt > temp.txt
+
+        echo "Enter New Phone:"
+        read phone
+        echo "Enter New Address:"
+        read addr
+
+        echo "$name|$phone|$addr" >> temp.txt
+        mv temp.txt AddressBook/data.txt
+
+        echo "Record Modified"
+        ;;
+
+    6)
+        echo "Exiting..."
+        exit
+        ;;
+
+    *)
+        echo "Invalid Choice"
+        ;;
+
+    esac
+done
+
+
+
+nano addressbook.sh
+
+Press Ctrl + O (Save).
+Press Enter.
+Press Ctrl + X (Exit).
+
+chmod +x address.sh --> for permission
+
+./addressbook.sh

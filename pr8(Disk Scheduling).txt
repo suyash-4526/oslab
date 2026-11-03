@@ -1,0 +1,212 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX 100
+
+// Sort requests in ascending order
+void sort(int a[], int n)
+{
+    for (int i = 0; i < n - 1; i++)
+    {
+        for (int j = 0; j < n - i - 1; j++)
+        {
+            if (a[j] > a[j + 1])
+            {
+                int temp = a[j];
+                a[j] = a[j + 1];
+                a[j + 1] = temp;
+            }
+        }
+    }
+}
+
+// SSTF Algorithm
+void SSTF(int a[], int n, int head)
+{
+    int visited[MAX] = {0};
+    int total = 0;
+
+    printf("\nSSTF Sequence: %d", head);
+
+    for (int i = 0; i < n; i++)
+    {
+        int min = 999999;
+        int index = -1;
+
+        // Find the nearest unvisited request
+        for (int j = 0; j < n; j++)
+        {
+            if (!visited[j])
+            {
+                int distance = abs(head - a[j]);
+
+                if (distance < min)
+                {
+                    min = distance;
+                    index = j;
+                }
+            }
+        }
+
+        // Move head to the selected request
+        visited[index] = 1;
+        total += abs(head - a[index]);
+        head = a[index];
+
+        printf(" -> %d", head);
+    }
+
+    printf("\nTotal Head Movement = %d\n", total);
+}
+
+// SCAN Algorithm
+void SCAN(int a[], int n, int head, int diskSize)
+{
+    int total = 0;
+
+    // Sort requests
+    sort(a, n);
+
+    printf("\nSCAN Sequence: %d", head);
+
+    // Service requests towards higher cylinder numbers
+    for (int i = 0; i < n; i++)
+    {
+        if (a[i] >= head)
+        {
+            total += abs(head - a[i]);
+            head = a[i];
+
+            printf(" -> %d", head);
+        }
+    }
+
+    // Move to the last cylinder of the disk
+    total += abs(head - (diskSize - 1));
+    head = diskSize - 1;
+
+    printf(" -> %d", head);
+
+    // Reverse direction and service remaining requests
+    for (int i = n - 1; i >= 0; i--)
+    {
+        if (a[i] < head && a[i] < diskSize - 1)
+        {
+            total += abs(head - a[i]);
+            head = a[i];
+
+            printf(" -> %d", head);
+        }
+    }
+
+    printf("\nTotal Head Movement = %d\n", total);
+}
+
+// C-LOOK Algorithm
+void CLOOK(int a[], int n, int head)
+{
+    int total = 0;
+    int first = -1;
+
+    // Sort requests
+    sort(a, n);
+
+    printf("\nC-LOOK Sequence: %d", head);
+
+    // Service requests towards higher cylinder numbers
+    for (int i = 0; i < n; i++)
+    {
+        if (a[i] >= head)
+        {
+            total += abs(head - a[i]);
+            head = a[i];
+
+            printf(" -> %d", head);
+        }
+    }
+
+    // Find first request on the lower side
+    for (int i = 0; i < n; i++)
+    {
+        if (a[i] < head)
+        {
+            first = i;
+            break;
+        }
+    }
+
+    // Jump to the lowest pending request
+    if (first != -1)
+    {
+        total += abs(head - a[first]);
+        head = a[first];
+
+        printf(" -> %d", head);
+
+        // Service remaining lower requests in ascending order
+        for (int i = first + 1; i < n; i++)
+        {
+            total += abs(head - a[i]);
+            head = a[i];
+
+            printf(" -> %d", head);
+        }
+    }
+
+    printf("\nTotal Head Movement = %d\n", total);
+}
+
+int main()
+{
+    int a[MAX], n, head, diskSize, choice;
+
+    // Input number of disk requests
+    printf("Enter number of requests: ");
+    scanf("%d", &n);
+
+    // Input request sequence
+    printf("Enter request sequence:\n");
+    for (int i = 0; i < n; i++)
+        scanf("%d", &a[i]);
+
+    // Input initial head position
+    printf("Enter initial head position: ");
+    scanf("%d", &head);
+
+    // Input total number of cylinders
+    printf("Enter disk size: ");
+    scanf("%d", &diskSize);
+
+    // Display menu
+    printf("\n1. SSTF");
+    printf("\n2. SCAN");
+    printf("\n3. C-LOOK");
+
+    printf("\nEnter your choice: ");
+    scanf("%d", &choice);
+
+    // Execute selected algorithm
+    switch (choice)
+    {
+        case 1:
+            SSTF(a, n, head);
+            break;
+
+        case 2:
+            SCAN(a, n, head, diskSize);
+            break;
+
+        case 3:
+            CLOOK(a, n, head);
+            break;
+
+        default:
+            printf("Invalid choice!\n");
+    }
+
+    return 0;
+}
+
+
+gcc filename.c -o output
+./output

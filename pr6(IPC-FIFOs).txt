@@ -1,0 +1,126 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+
+#define SIZE 1024
+
+int main()
+{
+    int fd1, fd2;
+    char sentence[SIZE];
+    char result[SIZE];
+
+    // Create two named pipes (FIFOs)
+    mkfifo("fifo1", 0666);
+    mkfifo("fifo2", 0666);
+
+    // Create a child process
+    pid_t pid = fork();
+
+    if (pid == 0)
+    {
+        // -------- PROCESS 2 (CHILD) --------
+
+        // Open first FIFO for reading
+        fd1 = open("fifo1", O_RDONLY);
+
+        // Read sentence from Process 1
+        read(fd1, sentence, SIZE - 1);
+        close(fd1);
+
+        // Count characters, words and lines
+        int characters = 0, words = 0, lines = 0;
+        int inWord = 0;
+
+        for (int i = 0; sentence[i] != '\0'; i++)
+        {
+            characters++;
+
+            // Count lines
+            if (sentence[i] == '\n')
+                lines++;
+
+            // Count words
+            if (sentence[i] == ' ' || sentence[i] == '\n' ||
+                sentence[i] == '\t')
+            {
+                inWord = 0;
+            }
+            else if (inWord == 0)
+            {
+                words++;
+                inWord = 1;
+            }
+        }
+
+        // Count the final line if it has no ending newline
+        if (characters > 0 && sentence[characters - 1] != '\n')
+            lines++;
+
+        // Write results into a text file
+        FILE *fp = fopen("result.txt", "w");
+
+        fprintf(fp, "Characters: %d\n", characters);
+        fprintf(fp, "Words: %d\n", words);
+        fprintf(fp, "Lines: %d\n", lines);
+
+        fclose(fp);
+
+        // Read contents of the result file
+        fp = fopen("result.txt", "r");
+
+        fread(result, 1, SIZE - 1, fp);
+        fclose(fp);
+
+        // Send result through second FIFO
+        fd2 = open("fifo2", O_WRONLY);
+        write(fd2, result, strlen(result));
+        close(fd2);
+
+        exit(0);
+    }
+    else if (pid > 0)
+    {
+        // -------- PROCESS 1 (PARENT) --------
+
+        // Accept sentence from user
+        printf("Enter sentences (press ENTER to finish):\n");
+        fgets(sentence, SIZE, stdin);
+
+        // Send sentence through first FIFO
+        fd1 = open("fifo1", O_WRONLY);
+        write(fd1, sentence, strlen(sentence) + 1);
+        close(fd1);
+
+        // Read result from second FIFO
+        fd2 = open("fifo2", O_RDONLY);
+        read(fd2, result, SIZE - 1);
+        close(fd2);
+
+        // Display result on standard output
+        printf("\nResult received from Process 2:\n");
+        printf("%s", result);
+
+        // Wait for child process
+        wait(NULL);
+
+        // Remove FIFO files
+        unlink("fifo1");
+        unlink("fifo2");
+    }
+    else
+    {
+        perror("fork failed");
+        return 1;
+    }
+
+    return 0;
+}
+
+
+gcc filename.c -o output
+./output

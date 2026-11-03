@@ -1,0 +1,120 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define SIZE 5
+
+// Shared buffer
+int buffer[SIZE];
+
+// Index for inserting and removing items
+int in = 0, out = 0;
+
+// Declare two counting semaphores and one mutex
+sem_t empty, full;
+pthread_mutex_t mutex;
+
+// Producer thread function
+void *producer(void *arg)
+{
+    int item;
+
+    // Produce 5 items
+    for (int i = 1; i <= 5; i++)
+    {
+        item = i;
+
+        // Wait if the buffer is full
+        sem_wait(&empty);
+
+        // Lock the buffer before accessing it
+        pthread_mutex_lock(&mutex);
+
+        // Insert item into the buffer
+        buffer[in] = item;
+        printf("Produced: %d\n", item);
+
+        // Move to the next buffer position
+        in = (in + 1) % SIZE;
+
+        // Unlock the buffer
+        pthread_mutex_unlock(&mutex);
+
+        // Increase the count of filled spaces
+        sem_post(&full);
+
+        sleep(1);
+    }
+
+    return NULL;
+}
+
+// Consumer thread function
+void *consumer(void *arg)
+{
+    int item;
+
+    // Consume 5 items
+    for (int i = 1; i <= 5; i++)
+    {
+        // Wait if the buffer is empty
+        sem_wait(&full);
+
+        // Lock the buffer before accessing it
+        pthread_mutex_lock(&mutex);
+
+        // Remove item from the buffer
+        item = buffer[out];
+        printf("Consumed: %d\n", item);
+
+        // Move to the next buffer position
+        out = (out + 1) % SIZE;
+
+        // Unlock the buffer
+        pthread_mutex_unlock(&mutex);
+
+        // Increase the count of empty spaces
+        sem_post(&empty);
+
+        sleep(1);
+    }
+
+    return NULL;
+}
+
+int main()
+{
+    // Declare producer and consumer threads
+    pthread_t p, c;
+
+    // Initialize empty semaphore to SIZE (5)
+    sem_init(&empty, 0, SIZE);
+
+    // Initialize full semaphore to 0
+    sem_init(&full, 0, 0);
+
+    // Initialize mutex
+    pthread_mutex_init(&mutex, NULL);
+
+    // Create producer thread
+    pthread_create(&p, NULL, producer, NULL);
+
+    // Create consumer thread
+    pthread_create(&c, NULL, consumer, NULL);
+
+    // Wait for both threads to finish
+    pthread_join(p, NULL);
+    pthread_join(c, NULL);
+
+    // Destroy semaphores and mutex
+    sem_destroy(&empty);
+    sem_destroy(&full);
+    pthread_mutex_destroy(&mutex);
+
+    return 0;
+}
+
+
+gcc filename.c -o output
+./output

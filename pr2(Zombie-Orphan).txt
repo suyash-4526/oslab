@@ -1,0 +1,97 @@
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+
+int main()
+{
+    int a[20], n, i, j, temp;
+    pid_t pid;
+
+    printf("Enter number of elements: ");
+    scanf("%d", &n);
+
+    printf("Enter elements: ");
+    for(i = 0; i < n; i++)
+        scanf("%d", &a[i]);
+
+    pid = fork();
+
+    if(pid == 0)
+    {
+        // Child process
+        printf("\nChild Process:\n");
+
+        for(i = 0; i < n-1; i++)
+            for(j = 0; j < n-i-1; j++)
+                if(a[j] > a[j+1])
+                {
+                    temp = a[j];
+                    a[j] = a[j+1];
+                    a[j+1] = temp;
+                }
+
+        printf("Sorted elements: ");
+        for(i = 0; i < n; i++)
+            printf("%d ", a[i]);
+
+        exit(0);
+    }
+    else
+    {
+        // Parent process
+        wait(NULL);
+
+        printf("\n\nParent Process:\n");
+
+        for(i = 0; i < n-1; i++)
+            for(j = 0; j < n-i-1; j++)
+                if(a[j] > a[j+1])
+                {
+                    temp = a[j];
+                    a[j] = a[j+1];
+                    a[j+1] = temp;
+                }
+
+        printf("Sorted elements: ");
+        for(i = 0; i < n; i++)
+            printf("%d ", a[i]);
+
+        printf("\n");
+
+        // Zombie Process Demonstration
+        pid = fork();
+
+        if(pid == 0)
+            exit(0);
+        else
+        {
+            printf("\nZombie Process Demonstration\n");
+            sleep(5);
+            wait(NULL);
+        }
+
+        // Orphan Process Demonstration
+        pid = fork();
+
+        if(pid == 0)
+        {
+            sleep(3);
+            printf("\nOrphan Process\n");
+            printf("New Parent PID: %d\n", getppid());
+        }
+        else
+        {
+            printf("\nParent Exiting (Orphan Demonstration)\n");
+            exit(0);
+        }
+    }
+
+    return 0;
+}
+
+
+
+gcc filename.c -o output
+./output
